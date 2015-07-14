@@ -16,6 +16,9 @@
 import warnings
 
 import pyparsing as pp
+import logging
+import re
+logger = logging.getLogger("luigi.server")
 
 
 def id_to_name_and_params(task_id):
@@ -54,6 +57,15 @@ def id_to_name_and_params(task_id):
         pp.ZeroOrMore(parameter + (pp.Literal(',')).suppress()) +
         pp.ZeroOrMore(parameter) +
         pp.Literal(')').suppress())
+
+    m = re.search('^\w*\((.*)\)$', task_id)
+    if m:
+        task_params = m.group(1)
+        #logger.info("TASKS PARAMS " + task_params)
+        cleaned_params = re.sub('\w+\(.*\)', 'nestedTask', task_params)
+        #logger.info("CLEANED PARAMS " + cleaned_params)
+        task_id = re.sub('\(.*\)', "(" + cleaned_params + ")", task_id)
+    #logger.info("TASK ID: " + task_id)
 
     parsed = parser.parseString(task_id).asDict()
     task_name = parsed['task']
